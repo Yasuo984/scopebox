@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Scopebox lets a human frame exactly what an agent may change on a shared live web page."
+    />
+    <meta name="theme-color" content="#f2f3ee" />
+    <title>Scopebox · Human-framed agent capability</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <div class="page-glow" aria-hidden="true"></div>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Scopebox home">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span>
+          </span>
+          <span class="brand-copy">
+            <strong>Scopebox</strong>
+            <small>Human-framed agent capability</small>
+          </span>
+        </a>
+
+        <div class="topbar-actions">
+          <span class="phase-pill" id="phase-pill">Draft</span>
+          <button class="button button-ghost" id="reset-button" type="button">
+            Reset demo
+          </button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="workspace" aria-labelledby="workspace-title">
+          <div class="workspace-heading">
+            <div>
+              <p class="eyebrow">Shared live page</p>
+              <h1 id="workspace-title">Launch Board</h1>
+            </div>
+            <div class="scope-version" aria-label="Current scope version">
+              <span>Scope</span>
+              <strong id="scope-version">v0</strong>
+            </div>
+          </div>
+
+          <article class="brief-card" aria-labelledby="brief-title">
+            <div class="brief-icon" aria-hidden="true">B</div>
+            <div class="brief-copy">
+              <p class="brief-label">Launch brief</p>
+              <h2 id="brief-title"></h2>
+              <p id="brief-objective"></p>
+              <ul id="brief-constraints"></ul>
+            </div>
+            <div class="brief-date">
+              <span>Target</span>
+              <strong id="brief-target-date"></strong>
+            </div>
+          </article>
+
+          <section class="board-section" aria-labelledby="board-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Human control surface</p>
+                <h2 id="board-title">Frame the agent's write scope</h2>
+                <p>
+                  Every field stays visible. Only framed fields become writable through
+                  WebMCP.
+                </p>
+              </div>
+              <button class="button button-secondary" id="frame-copy-button" type="button">
+                Frame copy fields
+              </button>
+            </div>
+
+            <div class="field-grid" id="field-grid"></div>
+          </section>
+
+          <section id="decision-zone" class="decision-zone" aria-live="polite"></section>
+        </section>
+
+        <aside class="side-rail" aria-label="Agent capability and activity">
+          <section class="surface-panel panel-dark" aria-labelledby="surface-title">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow eyebrow-on-dark">Live capability surface</p>
+                <h2 id="surface-title">What the agent can do now</h2>
+              </div>
+              <span class="connection-dot" id="connection-dot" aria-hidden="true"></span>
+            </div>
+
+            <div class="support-line" id="support-line">
+              Checking WebMCP support…
+            </div>
+
+            <div class="tool-list" id="tool-list"></div>
+
+            <div class="surface-note">
+              <span aria-hidden="true">↻</span>
+              Tools are registered only while they are valid for the current page state.
+            </div>
+          </section>
+
+          <section class="access-panel panel-light" aria-labelledby="access-title">
+            <div class="panel-heading compact">
+              <div>
+                <p class="eyebrow">Field access</p>
+                <h2 id="access-title">Read everywhere. Write inside the frame.</h2>
+              </div>
+            </div>
+            <div class="access-list" id="access-list"></div>
+          </section>
+
+          <section class="activity-panel panel-light" aria-labelledby="activity-title">
+            <div class="panel-heading compact">
+              <div>
+                <p class="eyebrow">Shared history</p>
+                <h2 id="activity-title">Activity</h2>
+              </div>
+            </div>
+            <ol class="activity-list" id="activity-list"></ol>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="footer">
+        <p>
+          The agent can only touch what the human frames.
+          <span aria-hidden="true">◫</span>
+        </p>
+        <p>Scopebox v0.1 · WebMCP Challenge prototype</p>
+      </footer>
+    </div>
+
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+    <section class="debug-panel" id="debug-panel" hidden aria-label="Local tool simulator">
+      <div class="debug-heading">
+        <strong>Local tool simulator</strong>
+        <span>Uses the same handlers as WebMCP.</span>
+      </div>
+      <div class="debug-actions" id="debug-actions"></div>
+      <pre id="debug-output"></pre>
+    </section>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
