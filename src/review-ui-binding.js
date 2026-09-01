@@ -40,7 +40,11 @@ document.addEventListener(
     if (!button) return;
 
     bindPendingReviewDecision(button.dataset.reviewId);
-    queueMicrotask(() => bindPendingReviewDecision(null));
+
+    // Clear only after the full click dispatch completes. A microtask can run
+    // between listeners in some browser hosts, which would erase the binding
+    // before the button's own handler consumes it.
+    globalThis.setTimeout(() => bindPendingReviewDecision(null), 0);
   },
   true,
 );
