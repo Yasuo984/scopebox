@@ -1,6 +1,5 @@
 import {
   createInitialState,
-  decideReview,
   decideScopeExpansion,
   editScopedFields,
   humanEditField,
@@ -10,6 +9,10 @@ import {
   setHumanScope,
   submitChangesForReview,
 } from "./domain.js";
+import {
+  consumePendingReviewDecision,
+  decideReviewWithIdentity,
+} from "./review-identity.js";
 
 const STORAGE_KEY = "scopebox:v0.1:state";
 
@@ -94,8 +97,10 @@ export class ScopeboxStore extends EventTarget {
     );
   }
 
-  decideReview(decision) {
-    return this.#commit(decideReview(this.#state, decision));
+  decideReview(decision, expectedReviewId = consumePendingReviewDecision()) {
+    return this.#commit(
+      decideReviewWithIdentity(this.#state, decision, expectedReviewId),
+    );
   }
 
   reset() {
