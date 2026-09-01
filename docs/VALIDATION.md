@@ -36,7 +36,20 @@ Feature branch `feature/review-stale-guard` adds three review-identity tests cov
 9. Missing review identity fails closed with `HOLD / REVIEW_ID_REQUIRED` and no mutation.
 10. An older review identity fails closed with `HOLD / REVIEW_STALE` and no mutation.
 
-A branch `npm run check` result of 10 passed / 0 failed was recorded before the live browser timing fix described below. Run `npm run check` once more after the final browser-binding fix before merging PR #3.
+Final branch-head check after the live browser timing fix:
+
+```text
+npm run check
+JavaScript syntax checks: PASS
+tests: 10
+pass: 10
+fail: 0
+cancelled: 0
+skipped: 0
+todo: 0
+```
+
+This final check was run by the Human on the Mac against the current `feature/review-stale-guard` working tree after the browser-binding fix.
 
 ## Local browser flow smoke test
 
@@ -148,9 +161,8 @@ The `reviewId` does not need to be prominently displayed in the normal Human UI.
 
 Before merging PR #3:
 
-- Run `npm run check` again after the final browser-binding fix.
-- Exercise both normal `Accept change set` and `Return to draft` once on the final branch head.
-- Keep the PR Draft until those checks are recorded.
+- Exercise normal `Return to draft` once on the final branch head and confirm the draft remains editable with the framed scope preserved.
+- Keep the PR Draft until that check is recorded.
 
 Before public Challenge submission:
 
