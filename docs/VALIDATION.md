@@ -36,7 +36,7 @@ Feature branch `feature/review-stale-guard` adds three review-identity tests cov
 9. Missing review identity fails closed with `HOLD / REVIEW_ID_REQUIRED` and no mutation.
 10. An older review identity fails closed with `HOLD / REVIEW_STALE` and no mutation.
 
-Final branch-head check after the live browser timing fix:
+A branch-head check after the live browser timing fix produced:
 
 ```text
 npm run check
@@ -49,7 +49,7 @@ skipped: 0
 todo: 0
 ```
 
-This final check was run by the Human on the Mac against the current `feature/review-stale-guard` working tree after the browser-binding fix.
+This check was run by the Human on the Mac against `feature/review-stale-guard` after the browser-binding fix and before the later compact LIVE-status UI polish.
 
 ## Local browser flow smoke test
 
@@ -157,53 +157,56 @@ After that fix, the same live built-in-browser Human Accept path succeeded and S
 
 The `reviewId` does not need to be prominently displayed in the normal Human UI. Its role is to bind the visible frozen change set to the exact Human decision below the surface.
 
-## Return to draft live validation
+## Return-to-draft live validation
 
-The normal `Return to draft` path was exercised on the final feature branch head in the ChatGPT built-in browser.
+The final review round-trip was exercised in the ChatGPT built-in browser.
 
 Observed sequence:
 
 ```text
-DRAFT
--> Human framed Product name and Price
--> Agent changed only those framed fields
--> Agent submitted 2 changes for Human review
-REVIEW / only read tools registered / frame preserved
--> Human selected Return to draft
-DRAFT / write tools restored / same changes preserved
+DRAFT with framed Product name + Price
+-> Agent edits Product name + Price
+-> Agent submits 2 changes for Human review
+REVIEW / only read Site tools remain
+-> Human selects Return to draft
+DRAFT restored
 ```
 
 Observed post-return state:
 
-- The phase changed from `REVIEW` back to `DRAFT`.
-- The edited Product name and Price values remained unchanged from the submitted draft.
-- The Human frame remained preserved.
+- Product name and Price edits remained present.
+- The Human frame remained on Product name and Price.
 - `edit_scoped_fields`, `request_scope_expansion`, and `submit_changes_for_review` became available again.
-- The open diff remained visible and editable.
-- Shared history recorded `Human returned the change set to draft.`
-- No acceptance event was created.
+- The open diff remained visible.
+- Activity recorded `Human returned the change set to draft.`
+- No Human acceptance event was created.
 
 Result:
 
 ```text
-RETURN_TO_DRAFT_NORMAL_PATH: PASS
+PASS / RETURN_TO_DRAFT_NORMAL_PATH
 ```
 
-## Merge readiness for PR #3
+## Compact LIVE-status UI polish
 
-The planned pre-merge validation for PR #3 is complete:
+After the functional validation above, the Live Capability Surface was simplified for the demo UI:
 
-```text
-final npm run check: PASS / 10 passed / 0 failed
-live Accept change set: PASS
-live Return to draft: PASS
-automated REVIEW_ID_REQUIRED negative: PASS / no mutation
-automated REVIEW_STALE negative: PASS / no mutation
-```
+- Removed the verbose `WebMCP live · N tools registered for this page state.` support bar.
+- Replaced the standalone connection dot with a compact text status pill.
+- Intended visible states are `LIVE`, `PREVIEW`, `PARTIAL`, and `CHECKING`.
+- Tool counts remain available as hover/title detail where applicable rather than occupying primary UI space.
+- The actual tool list remains the visible source of which capabilities are available now.
 
-PR #3 may leave Draft status and become a merge candidate. This validation record does not itself merge the PR or change `main`.
+This is UI-only polish; it does not intentionally change capability derivation, registration, scope, review identity, or Human/Agent authority behavior.
 
-## Remaining validation before public deployment
+## Remaining validation before merge / deployment
+
+Before merging PR #3 after the compact LIVE-status UI polish:
+
+- Run `npm run check` once on the new branch head.
+- Visually confirm the built-in browser shows the compact `LIVE` status and no verbose WebMCP support bar.
+- Confirm the Site tool list still changes correctly when scope/page state changes.
+- Keep the PR Draft until that final UI recheck is recorded.
 
 Before public Challenge submission:
 
