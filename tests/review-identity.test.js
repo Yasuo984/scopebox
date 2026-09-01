@@ -7,6 +7,7 @@ import {
   setHumanScope,
   submitChangesForReview,
 } from "../src/domain.js";
+import { formatReviewReference } from "../src/review-display.js";
 import { decideReviewWithIdentity } from "../src/review-identity.js";
 
 function createSubmittedReview() {
@@ -29,15 +30,18 @@ function createSubmittedReview() {
 
 test("human acceptance is bound to the exact active review ID", () => {
   const submitted = createSubmittedReview();
+  const reviewId = submitted.review.id;
   const accepted = decideReviewWithIdentity(
     submitted,
     "accept",
-    submitted.review.id,
+    reviewId,
   );
 
   assert.equal(accepted.result.code, "REVIEW_ACCEPTED");
+  assert.equal(accepted.result.reviewId, reviewId);
   assert.equal(accepted.state.phase, "ACCEPTED");
   assert.ok(accepted.state.acceptedAt);
+  assert.equal(accepted.state.activity.at(-1).details.reviewId, reviewId);
 });
 
 test("a review decision without an identity fails closed", () => {
@@ -88,4 +92,29 @@ test("an old review decision cannot be applied to a newer change set", () => {
   );
   assert.equal(accepted.result.code, "REVIEW_ACCEPTED");
   assert.equal(accepted.state.phase, "ACCEPTED");
+});
+
+test("returning a review preserves its identity in shared history", () => {
+  const submitted = createSubmittedReview();
+  const reviewId = submitted.review.id;
+  const returned = decideReviewWithIdentity(
+    submitted,
+    "return",
+    reviewId,
+  );
+
+  assert.equal(returned.result.code, "REVIEW_RETURNED");
+  assert.equal(returned.result.reviewId, reviewId);
+  assert.equal(returned.state.phase, "DRAFT");
+  assert.equal(returned.state.review, null);
+  assert.equal(returned.state.activity.at(-1).details.reviewId, reviewId);
+});
+
+test("review identities have a compact human-facing reference", () => {
+  assert.equal(
+    formatReviewReference("review_58f14e41-e3c3-4865-8bd7-2d8e60f99db3"),
+    "REVIEW 58F1…9DB3",
+  );
+  assert.equal(formatReviewReference("review_abc123"), "REVIEW ABC123");
+  assert.equal(formatReviewReference(null), null);
 });
