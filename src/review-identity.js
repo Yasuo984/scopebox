@@ -12,6 +12,26 @@ function hold(code, message, extra = {}) {
   };
 }
 
+function attachReviewIdentity(outcome, reviewId) {
+  if (!outcome?.result?.ok) return outcome;
+
+  const activity = Array.isArray(outcome.state?.activity)
+    ? outcome.state.activity.at(-1)
+    : null;
+  if (activity) {
+    activity.details = {
+      ...(activity.details ?? {}),
+      reviewId,
+    };
+  }
+
+  outcome.result = {
+    ...outcome.result,
+    reviewId,
+  };
+  return outcome;
+}
+
 export function bindPendingReviewDecision(reviewId) {
   pendingReviewDecisionId = typeof reviewId === "string" ? reviewId : null;
 }
@@ -50,5 +70,8 @@ export function decideReviewWithIdentity(currentState, decision, expectedReviewI
     };
   }
 
-  return decideReview(currentState, decision);
+  return attachReviewIdentity(
+    decideReview(currentState, decision),
+    activeReviewId,
+  );
 }
