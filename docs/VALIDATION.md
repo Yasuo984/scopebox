@@ -157,12 +157,53 @@ After that fix, the same live built-in-browser Human Accept path succeeded and S
 
 The `reviewId` does not need to be prominently displayed in the normal Human UI. Its role is to bind the visible frozen change set to the exact Human decision below the surface.
 
-## Remaining validation before merge / deployment
+## Return to draft live validation
 
-Before merging PR #3:
+The normal `Return to draft` path was exercised on the final feature branch head in the ChatGPT built-in browser.
 
-- Exercise normal `Return to draft` once on the final branch head and confirm the draft remains editable with the framed scope preserved.
-- Keep the PR Draft until that check is recorded.
+Observed sequence:
+
+```text
+DRAFT
+-> Human framed Product name and Price
+-> Agent changed only those framed fields
+-> Agent submitted 2 changes for Human review
+REVIEW / only read tools registered / frame preserved
+-> Human selected Return to draft
+DRAFT / write tools restored / same changes preserved
+```
+
+Observed post-return state:
+
+- The phase changed from `REVIEW` back to `DRAFT`.
+- The edited Product name and Price values remained unchanged from the submitted draft.
+- The Human frame remained preserved.
+- `edit_scoped_fields`, `request_scope_expansion`, and `submit_changes_for_review` became available again.
+- The open diff remained visible and editable.
+- Shared history recorded `Human returned the change set to draft.`
+- No acceptance event was created.
+
+Result:
+
+```text
+RETURN_TO_DRAFT_NORMAL_PATH: PASS
+```
+
+## Merge readiness for PR #3
+
+The planned pre-merge validation for PR #3 is complete:
+
+```text
+final npm run check: PASS / 10 passed / 0 failed
+live Accept change set: PASS
+live Return to draft: PASS
+automated REVIEW_ID_REQUIRED negative: PASS / no mutation
+automated REVIEW_STALE negative: PASS / no mutation
+```
+
+PR #3 may leave Draft status and become a merge candidate. This validation record does not itself merge the PR or change `main`.
+
+## Remaining validation before public deployment
 
 Before public Challenge submission:
 
