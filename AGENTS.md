@@ -25,6 +25,8 @@ Use the six-field Launch Board and this path:
 - A stale capability returns `HOLD / SCOPE_STALE` and applies no changes.
 - An update containing any out-of-scope field applies nothing.
 - Review submission does not equal human acceptance.
+- Every Human review decision is bound to the exact rendered `reviewId`.
+- A missing review identity returns `HOLD / REVIEW_ID_REQUIRED`; a mismatched identity returns `HOLD / REVIEW_STALE`; neither changes state.
 - Tool results must be concise and verification-friendly.
 - The normal human interface must remain usable without WebMCP.
 
