@@ -11,6 +11,22 @@ function getCanonicalValue(fieldId, fallback = "") {
   return typeof value === "string" ? value : fallback;
 }
 
+function setPropertyIfChanged(target, property, value) {
+  if (target[property] !== value) target[property] = value;
+}
+
+function setAttributeIfChanged(target, name, value) {
+  if (target.getAttribute?.(name) !== value) {
+    target.setAttribute(name, value);
+  }
+}
+
+function removeAttributeIfPresent(target, name) {
+  if (target.hasAttribute?.(name) || target.getAttribute?.(name) != null) {
+    target.removeAttribute(name);
+  }
+}
+
 export function formatFieldDisplayValue(fieldId, value) {
   const text = typeof value === "string" ? value : "";
   return fieldId === "launch_date" && /^\d{4}-\d{2}-\d{2}$/.test(text)
@@ -38,19 +54,21 @@ function applyCanonicalModel(output, fieldId, describedBy = "") {
   const value = getCanonicalValue(fieldId, output.textContent ?? "");
   const model = createCanonicalFieldModel(fieldId, value, describedBy);
 
-  output.className = model.className;
-  output.textContent = model.text;
-  output.title = model.title;
-  output.dataset.fieldId = fieldId;
-  output.dataset.contentSurface = "canonical";
-  output.contentEditable = "false";
-  output.setAttribute("aria-readonly", "true");
-  output.setAttribute("aria-label", model.ariaLabel);
+  setPropertyIfChanged(output, "className", model.className);
+  setPropertyIfChanged(output, "textContent", model.text);
+  setPropertyIfChanged(output, "title", model.title);
+  if (output.dataset.fieldId !== fieldId) output.dataset.fieldId = fieldId;
+  if (output.dataset.contentSurface !== "canonical") {
+    output.dataset.contentSurface = "canonical";
+  }
+  setPropertyIfChanged(output, "contentEditable", "false");
+  setAttributeIfChanged(output, "aria-readonly", "true");
+  setAttributeIfChanged(output, "aria-label", model.ariaLabel);
 
   if (model.ariaDescribedBy) {
-    output.setAttribute("aria-describedby", model.ariaDescribedBy);
+    setAttributeIfChanged(output, "aria-describedby", model.ariaDescribedBy);
   } else {
-    output.removeAttribute("aria-describedby");
+    removeAttributeIfPresent(output, "aria-describedby");
   }
 
   return output;
@@ -134,7 +152,17 @@ function startCanonicalFieldSurface() {
     subtree: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ["contenteditable"],
+    attributeFilter: [
+      "aria-describedby",
+      "aria-label",
+      "aria-readonly",
+      "class",
+      "contenteditable",
+      "data-content-surface",
+      "data-field-id",
+      "id",
+      "title",
+    ],
   });
 
   synchronize();
