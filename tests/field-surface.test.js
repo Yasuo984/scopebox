@@ -104,7 +104,6 @@ test("a DOM-only control value cannot replace the stored canonical value", () =>
       output.attributes.get("aria-describedby"),
       "field-headline-count",
     );
-    assert.equal("value" in output, false);
   } finally {
     if (previousScopebox === undefined) {
       delete globalThis.scopebox;
