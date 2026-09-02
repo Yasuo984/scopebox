@@ -42,11 +42,12 @@ export function createCanonicalFieldModel(fieldId, value, describedBy = "") {
 
   return {
     tagName: "output",
+    id: `field-${fieldId}`,
     className: `field-value${multiline ? " field-value-multiline" : ""}`,
     text,
     title: DISPLAY_NOTE,
     ariaLabel: `${label}, display only`,
-    ariaDescribedBy: describedBy || null,
+    ariaDescribedBy: describedBy || `field-${fieldId}-count`,
   };
 }
 
@@ -54,6 +55,7 @@ function applyCanonicalModel(output, fieldId, describedBy = "") {
   const value = getCanonicalValue(fieldId, output.textContent ?? "");
   const model = createCanonicalFieldModel(fieldId, value, describedBy);
 
+  setPropertyIfChanged(output, "id", model.id);
   setPropertyIfChanged(output, "className", model.className);
   setPropertyIfChanged(output, "textContent", model.text);
   setPropertyIfChanged(output, "title", model.title);
@@ -87,7 +89,6 @@ export function replaceEditableFieldControl(
   const describedBy = control.getAttribute?.("aria-describedby") ?? "";
   const fallback = typeof control.value === "string" ? control.value : "";
   const output = documentRef.createElement("output");
-  output.id = control.id || `field-${fieldId}`;
   output.textContent = getCanonicalValue(fieldId, fallback);
   applyCanonicalModel(output, fieldId, describedBy);
   control.replaceWith(output);
@@ -106,7 +107,6 @@ function ensureCardOutput(card, documentRef) {
   let output = card.querySelector?.(OUTPUT_SELECTOR);
   if (!output) {
     output = documentRef.createElement("output");
-    output.id = `field-${fieldId}`;
     const footer = card.querySelector?.(".field-footer");
     if (footer) {
       card.insertBefore(output, footer);
@@ -115,7 +115,7 @@ function ensureCardOutput(card, documentRef) {
     }
   }
 
-  return applyCanonicalModel(output, fieldId, `${output.id}-count`);
+  return applyCanonicalModel(output, fieldId);
 }
 
 export function synchronizeCanonicalFieldSurface(
