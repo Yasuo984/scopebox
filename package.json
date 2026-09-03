@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "test": "node --test tests/*.test.js",
-    "check": "node --check src/domain.js && node --check src/store.js && node --check src/webmcp.js && node --check src/main.js && npm test"
+    "check": "node --check src/domain.js && node --check src/store.js && node --check src/webmcp.js && node --check src/main.js && node --check src/review-identity.js && node --check src/review-ui-binding.js && node --check src/review-display.js && node --check src/field-surface.js && node --check src/scope-expansion-bridge.js && node --check src/bootstrap.js && npm test"
   },
   "engines": {
     "node": ">=20"

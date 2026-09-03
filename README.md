@@ -21,6 +21,15 @@ Scopebox does not merely check permissions after a tool call. It changes which t
 
 Each dynamic write tool closes over the scope version that issued it. A stale invocation fails closed with `HOLD / SCOPE_STALE`.
 
+Human review decisions close over the exact rendered `reviewId`. A decision without an identity fails closed with `HOLD / REVIEW_ID_REQUIRED`; a decision aimed at an older change set fails closed with `HOLD / REVIEW_STALE`. Neither condition mutates the board.
+
+```text
+scopeVersion = which capability boundary the agent acted under
+reviewId     = which frozen change set the human decided on
+```
+
+Review and Accepted cards, plus related Shared History entries, show a compact reference such as `REVIEW 58F1…9DB3`. The full identity remains available through the reference tooltip and accessibility label. Returning a change set to Draft and submitting again produces a new review reference, so the history shows which exact round was returned or accepted.
+
 ## Three-minute demo path
 
 1. Human frames **Headline** and **Description**.
@@ -82,6 +91,10 @@ The tests cover:
 - stale capability failure after a human scope change
 - agent request versus human grant separation
 - review submission versus human acceptance separation
+- exact `reviewId` binding for Human acceptance
+- fail-closed handling for missing and stale review identities
+- preservation of the returned review identity in Shared History
+- compact human-facing review reference formatting
 
 ## Test with WebMCP
 
@@ -103,10 +116,10 @@ The app uses JavaScript tool registration in the top-level page. It does not rel
 
 ```text
 Human UI
-  | selects fields / approves requests / accepts review
+  | selects fields / approves requests / decides an exact rendered review
   v
 Versioned domain state
-  | derives currently valid capabilities
+  | derives currently valid capabilities and frozen review identity
   v
 WebMCP registration manager
   | aborts obsolete registrations and registers current tools

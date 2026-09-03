@@ -6,6 +6,7 @@ import {
   toolScopeSnapshot,
   toolWorkspaceSnapshot,
 } from "./domain.js";
+import { ScopeExpansionDecisionBridge } from "./scope-expansion-bridge.js";
 
 function writableFieldSchema(fieldId) {
   const field = getFieldDefinition(fieldId);
@@ -22,7 +23,6 @@ function writableFieldSchema(fieldId) {
   return schema;
 }
 
-
 function withTimeout(promise, milliseconds, label) {
   let timer;
   const timeout = new Promise((_, reject) => {
@@ -31,7 +31,7 @@ function withTimeout(promise, milliseconds, label) {
   return Promise.race([Promise.resolve(promise), timeout]).finally(() => clearTimeout(timer));
 }
 
-function buildToolDefinitions(store) {
+function buildToolDefinitions(store, expansionBridge) {
   const state = store.getState();
   const derived = deriveState(state);
   const tools = [];
@@ -114,7 +114,7 @@ function buildToolDefinitions(store) {
     tools.push({
       name: "request_scope_expansion",
       description:
-        "Ask the human to add blocked fields to the agent write scope. This creates a visible request and does not expand permissions by itself.",
+        "Ask the human to add blocked fields to the agent write scope. This creates a visible decision card, waits for the Human to approve or deny it, and returns that decision to the same Agent turn. It never grants permission by itself. After approval, re-inspect the active scope and continue without asking the Human to confirm again.",
       inputSchema: {
         type: "object",
         properties: {
@@ -144,14 +144,12 @@ function buildToolDefinitions(store) {
         additionalProperties: false,
       },
       annotations: { readOnlyHint: false, untrustedContentHint: true },
-      execute: async (input) => {
-        const outcome = store.requestScopeExpansion(input, registeredScopeVersion);
-        return {
-          ...outcome,
-          currentScopeVersion: store.getState().scopeVersion,
-          permissionChanged: false,
-        };
-      },
+      execute: async (input, context = {}) =>
+        expansionBridge.requestAndWait(
+          input,
+          registeredScopeVersion,
+          context,
+        ),
     });
   }
 
@@ -184,17 +182,40 @@ function buildToolDefinitions(store) {
 
 export class WebMCPManager extends EventTarget {
   #store;
+  #expansionBridge;
   #controllers = [];
   #definitions = new Map();
   #refreshQueue = Promise.resolve();
+  #refreshDeferred = false;
   #generation = 0;
   #disposed = false;
   #lastStatus = null;
+  #onStoreChange;
+  #onExpansionSettled;
 
   constructor(store) {
     super();
     this.#store = store;
-    this.#store.addEventListener("change", () => this.refresh());
+    this.#expansionBridge = new ScopeExpansionDecisionBridge(store);
+
+    this.#onStoreChange = () => {
+      if (this.#expansionBridge.shouldDeferRefresh) {
+        this.#refreshDeferred = true;
+        return;
+      }
+      this.refresh();
+    };
+    this.#onExpansionSettled = () => {
+      if (this.#disposed) return;
+      this.#refreshDeferred = false;
+      this.refresh();
+    };
+
+    this.#store.addEventListener("change", this.#onStoreChange);
+    this.#expansionBridge.addEventListener(
+      "settled",
+      this.#onExpansionSettled,
+    );
   }
 
   get status() {
@@ -214,6 +235,7 @@ export class WebMCPManager extends EventTarget {
   }
 
   refresh() {
+    if (this.#disposed) return this.#refreshQueue;
     const generation = ++this.#generation;
     this.#refreshQueue = this.#refreshQueue.then(() => this.#performRefresh(generation));
     return this.#refreshQueue;
@@ -224,13 +246,21 @@ export class WebMCPManager extends EventTarget {
       return;
     }
 
+    if (this.#expansionBridge.shouldDeferRefresh) {
+      this.#refreshDeferred = true;
+      return;
+    }
+
     for (const controller of this.#controllers) {
       controller.abort();
     }
     this.#controllers = [];
     await Promise.resolve();
 
-    const definitions = buildToolDefinitions(this.#store);
+    const definitions = buildToolDefinitions(
+      this.#store,
+      this.#expansionBridge,
+    );
     this.#definitions = new Map(definitions.map((tool) => [tool.name, tool]));
 
     const modelContext = document.modelContext;
@@ -268,6 +298,8 @@ export class WebMCPManager extends EventTarget {
       expected: definitions.map((tool) => tool.name),
       errors,
       generation,
+      refreshDeferred: this.#refreshDeferred,
+      humanDecisionPending: this.#expansionBridge.isWaiting,
     };
     this.dispatchEvent(
       new CustomEvent("status", { detail: structuredClone(this.#lastStatus) }),
@@ -287,7 +319,15 @@ export class WebMCPManager extends EventTarget {
   }
 
   dispose() {
+    if (this.#disposed) return;
     this.#disposed = true;
+    this.#store.removeEventListener?.("change", this.#onStoreChange);
+    this.#expansionBridge.removeEventListener?.(
+      "settled",
+      this.#onExpansionSettled,
+    );
+    this.#expansionBridge.dispose();
+
     for (const controller of this.#controllers) {
       controller.abort();
     }

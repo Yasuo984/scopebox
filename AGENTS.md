@@ -25,8 +25,13 @@ Use the six-field Launch Board and this path:
 - A stale capability returns `HOLD / SCOPE_STALE` and applies no changes.
 - An update containing any out-of-scope field applies nothing.
 - Review submission does not equal human acceptance.
+- Every Human review decision is bound to the exact rendered `reviewId`.
+- A missing review identity returns `HOLD / REVIEW_ID_REQUIRED`; a mismatched identity returns `HOLD / REVIEW_STALE`; neither changes state.
+- Launch Board content values are canonical display outputs, not directly editable form controls.
+- Agent content changes may enter state only through the currently registered `edit_scoped_fields` capability.
+- A browser-only DOM mutation must never become visible canonical state, diff, or review content.
 - Tool results must be concise and verification-friendly.
-- The normal human interface must remain usable without WebMCP.
+- The normal human interface must remain usable without WebMCP for framing, decisions, and review.
 
 ## Technical boundaries
 
@@ -37,6 +42,7 @@ Use the six-field Launch Board and this path:
 - Validate all binary authorization rules in code, not only in JSON Schema.
 - Preserve `readOnlyHint` and `untrustedContentHint` annotations.
 - Keep tool names under 30 characters and outputs compact.
+- The local simulator must invoke the same state handlers as WebMCP; it must not re-enable direct field editing.
 
 ## Do not add in v0.1
 

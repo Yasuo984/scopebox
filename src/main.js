@@ -26,8 +26,7 @@ const refs = {
   accessTitle: document.querySelector("#access-title"),
   accessList: document.querySelector("#access-list"),
   activityList: document.querySelector("#activity-list"),
-  supportLine: document.querySelector("#support-line"),
-  connectionDot: document.querySelector("#connection-dot"),
+  connectionStatus: document.querySelector("#connection-status"),
   frameCopyButton: document.querySelector("#frame-copy-button"),
   resetButton: document.querySelector("#reset-button"),
   toastRegion: document.querySelector("#toast-region"),
@@ -297,18 +296,23 @@ function renderTools(state) {
   );
 
   const status = webmcp.status;
-  refs.connectionDot.className = "connection-dot";
+  refs.connectionStatus.className = "connection-status";
+  refs.connectionStatus.removeAttribute("title");
+
   if (!status) {
-    refs.supportLine.textContent = "Checking WebMCP support…";
+    refs.connectionStatus.textContent = "Checking";
   } else if (!status.supported) {
-    refs.supportLine.textContent =
-      "Preview mode · the expected tool surface is shown. Open in ChatGPT or WebMCP-enabled Chrome for live registration.";
+    refs.connectionStatus.classList.add("is-preview");
+    refs.connectionStatus.textContent = "Preview";
+    refs.connectionStatus.title = "WebMCP is not available in this browser context.";
   } else if (status.errors.length > 0) {
-    refs.connectionDot.classList.add("has-error");
-    refs.supportLine.textContent = `WebMCP detected · ${status.registered.length}/${status.expected.length} tools registered.`;
+    refs.connectionStatus.classList.add("has-error");
+    refs.connectionStatus.textContent = "Partial";
+    refs.connectionStatus.title = `${status.registered.length}/${status.expected.length} tools registered.`;
   } else {
-    refs.connectionDot.classList.add("is-live");
-    refs.supportLine.textContent = `WebMCP live · ${status.registered.length} tool${status.registered.length === 1 ? "" : "s"} registered for this page state.`;
+    refs.connectionStatus.classList.add("is-live");
+    refs.connectionStatus.textContent = "Live";
+    refs.connectionStatus.title = `${status.registered.length} tool${status.registered.length === 1 ? "" : "s"} registered.`;
   }
 }
 

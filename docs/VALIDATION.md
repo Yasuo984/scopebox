@@ -1,23 +1,26 @@
 # Scopebox v0.1 Validation Record
 
-Validation date: 2026-08-29
+Validation dates:
+
+- 2026-08-29 JST — initial static/domain and local browser validation
+- 2026-09-02 JST — ChatGPT built-in browser / real Site tools validation
 
 ## Static and domain checks
 
-Command:
+Initial command:
 
 ```bash
 npm run check
 ```
 
-Result:
+Initial result:
 
 ```text
 JavaScript syntax checks: PASS
 Domain tests: 7 passed, 0 failed
 ```
 
-Covered behavior:
+Initial covered behavior:
 
 1. An empty human frame exposes no write-intent capability.
 2. A human frame creates a versioned write scope.
@@ -27,7 +30,28 @@ Covered behavior:
 6. The agent can request expansion but cannot grant it.
 7. Agent review submission remains separate from human acceptance.
 
-## Browser flow smoke test
+Feature branch `feature/review-stale-guard` adds three review-identity tests covering:
+
+8. Human acceptance bound to the exact active `reviewId`.
+9. Missing review identity fails closed with `HOLD / REVIEW_ID_REQUIRED` and no mutation.
+10. An older review identity fails closed with `HOLD / REVIEW_STALE` and no mutation.
+
+A branch-head check after the live browser timing fix produced:
+
+```text
+npm run check
+JavaScript syntax checks: PASS
+tests: 10
+pass: 10
+fail: 0
+cancelled: 0
+skipped: 0
+todo: 0
+```
+
+This check was run by the Human on the Mac against `feature/review-stale-guard` after the browser-binding fix and before the later compact LIVE-status UI polish.
+
+## Local browser flow smoke test
 
 The complete UI path was exercised in headless Chromium using the same application modules and the same local tool handlers used by WebMCP.
 
@@ -60,11 +84,133 @@ JavaScript console errors: 0
 page errors: 0
 ```
 
-## Deployment verification still required
+## ChatGPT built-in browser / real WebMCP validation
 
-The remaining release gate is discovery and invocation through ChatGPT's actual built-in browser after deployment to a secure public origin. That check should confirm:
+Environment:
 
-- Site tools discovers the top-level imperative registrations.
-- Scope changes cause the visible tool list to update.
-- The agent follows the expansion request path without attempting ordinary browser edits outside the frame.
-- All five tools return concise, usable results in the live host.
+```text
+ChatGPT desktop app built-in browser
+Site tools: enabled
+Origin: http://127.0.0.1:4173/
+Scopebox mode: normal route, not the local tool simulator
+```
+
+Observed live behavior:
+
+1. `Scope v0` registered only the two read tools:
+   - `inspect_workspace`
+   - `inspect_active_scope`
+2. Human framed **Headline** and **Description**.
+3. Scope moved to `v1`, and the live Site tool surface expanded to four tools:
+   - `inspect_workspace`
+   - `inspect_active_scope`
+   - `edit_scoped_fields`
+   - `request_scope_expansion`
+4. ChatGPT Work successfully invoked the actual Site tools after the prompt explicitly referenced the current built-in-browser page and Site tools / WebMCP.
+5. The agent correctly reported that only **Headline** and **Description** were writable and made no edits during the read-only inspection step.
+6. The agent then used `edit_scoped_fields` to change only the framed fields. Out-of-scope fields remained unchanged.
+7. Once changes existed, `submit_changes_for_review` appeared dynamically, producing a five-tool live surface.
+8. The agent detected that the brief required September 12 while **Launch date** was still September 18 and read-only.
+9. The agent called `request_scope_expansion` instead of editing the blocked field.
+10. Scopebox displayed **Human decision required** with `Keep current scope` and `Expand scope` controls.
+11. While the request was pending, the live capability surface contracted and the duplicate expansion-request capability was unavailable.
+12. Human approved the request. Scope advanced to `v2`, and **Launch date** became writable.
+13. The agent edited **Launch date** to September 12 without changing the still-read-only fields.
+14. The agent submitted the current change set for Human review.
+15. Scopebox entered `REVIEW`; all write tools disappeared and only the read tools remained registered.
+16. The framed fields remained visibly preserved while the exact diff was shown for Human review.
+17. Human selected `Accept change set`; Scopebox entered `ACCEPTED` and kept write tools closed.
+
+This validates the core live relationship:
+
+```text
+Human visual selection
+-> page state
+-> live WebMCP capability surface
+-> bounded Agent action
+-> Agent scope request
+-> Human grant
+-> reissued capability
+-> Agent continuation
+-> frozen review
+-> Human acceptance
+```
+
+## Review identity binding validation
+
+PR #3 adds an exact `reviewId` binding for Human review decisions.
+
+Intended invariant:
+
+```text
+scopeVersion = which capability boundary the agent acted under
+reviewId     = which frozen change set the Human decided on
+```
+
+Automated negative tests cover `REVIEW_ID_REQUIRED` and `REVIEW_STALE` with no state mutation.
+
+The first live Mac built-in-browser Accept test produced a false HOLD on the normal path. Investigation found that the temporary rendered `reviewId` binding was being cleared with `queueMicrotask`, which could clear the identity before the button's own Accept handler consumed it in this browser host.
+
+The browser-binding cleanup was changed to the next task with `setTimeout(..., 0)`, preserving the rendered review identity through the complete click dispatch.
+
+After that fix, the same live built-in-browser Human Accept path succeeded and Scopebox reached `ACCEPTED`.
+
+The `reviewId` does not need to be prominently displayed in the normal Human UI. Its role is to bind the visible frozen change set to the exact Human decision below the surface.
+
+## Return-to-draft live validation
+
+The final review round-trip was exercised in the ChatGPT built-in browser.
+
+Observed sequence:
+
+```text
+DRAFT with framed Product name + Price
+-> Agent edits Product name + Price
+-> Agent submits 2 changes for Human review
+REVIEW / only read Site tools remain
+-> Human selects Return to draft
+DRAFT restored
+```
+
+Observed post-return state:
+
+- Product name and Price edits remained present.
+- The Human frame remained on Product name and Price.
+- `edit_scoped_fields`, `request_scope_expansion`, and `submit_changes_for_review` became available again.
+- The open diff remained visible.
+- Activity recorded `Human returned the change set to draft.`
+- No Human acceptance event was created.
+
+Result:
+
+```text
+PASS / RETURN_TO_DRAFT_NORMAL_PATH
+```
+
+## Compact LIVE-status UI polish
+
+After the functional validation above, the Live Capability Surface was simplified for the demo UI:
+
+- Removed the verbose `WebMCP live · N tools registered for this page state.` support bar.
+- Replaced the standalone connection dot with a compact text status pill.
+- Intended visible states are `LIVE`, `PREVIEW`, `PARTIAL`, and `CHECKING`.
+- Tool counts remain available as hover/title detail where applicable rather than occupying primary UI space.
+- The actual tool list remains the visible source of which capabilities are available now.
+
+This is UI-only polish; it does not intentionally change capability derivation, registration, scope, review identity, or Human/Agent authority behavior.
+
+## Remaining validation before merge / deployment
+
+Before merging PR #3 after the compact LIVE-status UI polish:
+
+- Run `npm run check` once on the new branch head.
+- Visually confirm the built-in browser shows the compact `LIVE` status and no verbose WebMCP support bar.
+- Confirm the Site tool list still changes correctly when scope/page state changes.
+- Keep the PR Draft until that final UI recheck is recorded.
+
+Before public Challenge submission:
+
+- Verify the same Site tools behavior on the protected Vercel Preview / secure deployed origin.
+- Verify HTTP/security headers on the deployed origin.
+- Confirm no deployment, publication, or broader repository access is granted implicitly.
+- Rehearse the final three-minute Human + Scopebox + ChatGPT demo path.

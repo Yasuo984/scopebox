@@ -1,0 +1,33 @@
+/* Canonical content values are presentation-only on the shared page.
+   Agent mutations enter state exclusively through the active Site tool. */
+
+#field-grid .field-input,
+#field-grid .field-textarea {
+  pointer-events: none;
+  caret-color: transparent;
+}
+
+.field-value {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  padding: 6px 1px 8px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  background: transparent;
+  cursor: text;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.45;
+  user-select: text;
+  white-space: pre-wrap;
+}
+
+.field-value-multiline {
+  min-height: 66px;
+}
+
+.field-card.is-locked .field-value {
+  color: #5e625d;
+}

@@ -10,6 +10,8 @@
     <meta name="theme-color" content="#f2f3ee" />
     <title>Scopebox · Human-framed agent capability</title>
     <link rel="stylesheet" href="./src/styles.css" />
+    <link rel="stylesheet" href="./src/review-display.css" />
+    <link rel="stylesheet" href="./src/field-surface.css" />
   </head>
   <body>
     <div class="page-glow" aria-hidden="true"></div>
@@ -88,11 +90,12 @@
                 <p class="eyebrow eyebrow-on-dark">Live capability surface</p>
                 <h2 id="surface-title">What the agent can do now</h2>
               </div>
-              <span class="connection-dot" id="connection-dot" aria-hidden="true"></span>
-            </div>
-
-            <div class="support-line" id="support-line">
-              Checking WebMCP support…
+              <span
+                class="connection-status"
+                id="connection-status"
+                role="status"
+                aria-live="polite"
+              >Checking</span>
             </div>
 
             <div class="tool-list" id="tool-list"></div>
@@ -144,6 +147,6 @@
       <pre id="debug-output"></pre>
     </section>
 
-    <script type="module" src="./src/main.js"></script>
+    <script type="module" src="./src/bootstrap.js"></script>
   </body>
 </html>
